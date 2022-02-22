@@ -1,0 +1,38 @@
+DELETE http://localhost:3001/api/persons/3
+
+#####
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "name": "I am fake name",
+    "number": "911-911-911"
+}
+
+#####
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "name": "",
+    "number": "911-911-9112"
+}
+
+#####
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "name": "I am fake name2",
+    "number": ""
+}
+
+
+#####
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "name": "Mary Poppendieck",
+    "number": "911-911-911"
+}
