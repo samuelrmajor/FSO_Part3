@@ -3,20 +3,18 @@ const express = require('express')
 const app = express()
 app.use(express.json())
 
-const morgan = require('morgan')
+const cors = require('cors')
+app.use(cors())
 
+const morgan = require('morgan')
 morgan.token('postcontent', (request) => {
   if (request.method == "POST") {
   return JSON.stringify(request.body)
   }
   else return ""
 })
-
-
-
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :postcontent'))
 
-morgan('tiny')
 let contacts = [
     { 
       "id": 1,
