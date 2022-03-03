@@ -102,8 +102,7 @@ app.post('/api/persons', (request, response, next) => {
 
 
 //PUT: Updates Current Contact number
-app.put('/api/notes/:id', (request, response, next) => {
-  const body = request.body
+app.put('/api/persons/:id', (request, response, next) => {
   const { name, number } = request.body
 
   Contact.findByIdAndUpdate(request.params.id, { name, number }, { new: true, runValidators: true, context: 'query' })
@@ -112,6 +111,10 @@ app.put('/api/notes/:id', (request, response, next) => {
     })
     .catch(error => next(error))
 })
+
+
+
+
 
 
 //Error Handling Middleware (Last)
