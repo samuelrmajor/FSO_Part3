@@ -4,9 +4,11 @@ const app = express()
 app.use(express.json())
 app.use(express.static('build'))
 
+//Allows Cors
 const cors = require('cors')
 app.use(cors())
 
+//Prints Requests (*Custom Morgan Printout*)
 const morgan = require('morgan')
 morgan.token('postcontent', (request) => {
   if (request.method == "POST") {
@@ -16,88 +18,66 @@ morgan.token('postcontent', (request) => {
 })
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :postcontent'))
 
-
-
+//Loads Env Variables (Such as port and Mongo DB Password)
 require('dotenv').config()
+
+//Mongo Models
+//Contact
 const Contact = require('./models/contact')
 
 
-// const generateId = () => {
-//   return Math.floor(Math.random() * 1996);
-// }
+//REST API paths
 
-
-//Gets Specific Ids
-app.get('/api/persons/:id', (request, response) => {
-  Contact.findById(request.params.id).then(contact => {
-    response.json(contact)
-  })
-})
-
-
-
-//Old Get
-// app.get('/api/persons', (request, response) => {
-//   response.json(contacts)
-// })
-
+//HTTP Get:  All Ids
 app.get('/api/persons', (request, response) => {
   Contact.find({}).then(contacts => {
     response.json(contacts)
   })
 })
 
-//Not implemented with MangoDB Yet
-// app.get('/info', (request, response) => {
-//     const currentdatetime = new Date()
-//   response.send('Phone book has info for ' + contacts.length.toString() + " people. <br/>"+currentdatetime)
-// })
-
-//Not implemented with MangoDB Yet
-// app.delete('/api/persons/:id', (request, response) => {
-//   const id = Number(request.params.id)
-//   contacts = contacts.filter(contact => contact.id !== id)
-//   response.status(204).end()
-// })
+//HTTP Get:  Specific Ids
+app.get('/api/persons/:id', (request, response, next) => {
+  Contact.findById(request.params.id).then(contact => {
+    response.json(contact)
+  }).catch(error => next(error))
+})
 
 
-//Creates a new contact (Non Mango DB/OLD)
-// app.post('/api/persons', (request, response) => {
-//   const body = request.body
 
-//   if (!body.name) {
-//     return response.status(400).json({ 
-//       error: 'name missing' 
-//     })
-//   }
-//   else if (!body.number) {
-//     return response.status(400).json({ 
-//       error: 'number missing' 
-//     })
-//   }
+// Not implemented with MangoDB Yet
+// GET: Returns number of contacts and current time
+app.get('/info', (request, response) => {    
+    Contact.count({}).then(contacts => {
+      const currentdatetime = new Date()
+      response.send('Phone book has info for ' + contacts.toString() + " people. <br/>"+currentdatetime)
+    }).catch(error => console.log(error))
+  
+})
 
-//   else if (contacts.map(contact => contact.name).includes(body.name) ) {
-//     return response.status(400).json({ 
-//       error: 'this person already exists' 
-//     })
-//   }
-   
-//   const contact = {
-//     name: body.name,
-//     number: body.number,
-//     id: generateId(),
-//   }
-
-//   contacts = contacts.concat(contact)
-
-//   response.json(contact)
-// })
+//GET: Homepage Info (Basic)
+app.get('/', (request, response) => {
+  response.send('<h1>Hello World!</h1>')
+})
 
 
 
 
-//Does not Check if Contact already exists
-app.post('/api/persons', (request, response) => {
+//DELETE: Deletes Contact by ID
+app.delete('/api/persons/:id', (request, response, next) => {
+  Contact.findByIdAndRemove(request.params.id)
+    .then(result => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
+})
+
+
+
+
+
+//POST: Creates new Contact
+// If number or name are not included, not posted and returns error
+app.post('/api/persons', (request, response, next) => {
   const body = request.body
 
   if (body.name === undefined) {
@@ -116,19 +96,39 @@ app.post('/api/persons', (request, response) => {
 
   contact.save().then(savedContact => {
     response.json(savedContact)
-  })
+  }).catch(
+    error => next(error))
 })
 
 
+//PUT: Updates Current Contact number
+app.put('/api/notes/:id', (request, response, next) => {
+  const body = request.body
+  const { name, number } = request.body
 
-
-
-
-
-
-app.get('/', (request, response) => {
-  response.send('<h1>Hello World!</h1>')
+  Contact.findByIdAndUpdate(request.params.id, { name, number }, { new: true, runValidators: true, context: 'query' })
+    .then(updatedContact => {
+      response.json(updatedContact)
+    })
+    .catch(error => next(error))
 })
+
+
+//Error Handling Middleware (Last)
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+  console.error(error.name)
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
+  }
+
+  next(error)
+}
+app.use(errorHandler)
+
+
 
 
 
